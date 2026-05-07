@@ -7,6 +7,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import java.util.List;
 
 import javax.validation.Valid;
 
@@ -15,6 +16,17 @@ import javax.validation.Valid;
 @RequestMapping("/api/medecins")
 public class MedecinController {
     private MedecinRepository medecinRepository;
+
+    @GetMapping("/all")
+    public List<Medecin> getAllMedecins() {
+        return medecinRepository.findAll();
+    }
+
+    @GetMapping("/by-username/{username}")
+    public ResponseEntity<Medecin> getMedecinByUsername(@PathVariable String username) {
+        Medecin m = medecinRepository.findByUsername(username);
+        return m != null ? ResponseEntity.ok(m) : ResponseEntity.notFound().build();
+    }
 
     @GetMapping
     public Page<Medecin> getMedecins(

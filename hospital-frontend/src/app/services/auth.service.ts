@@ -28,6 +28,15 @@ export class AuthService {
     );
   }
 
+  
+  signupPatient(data: any): Observable<any> {
+    return this.http.post(`${this.apiUrl}/signup/patient`, data);
+  }
+
+  signupDoctor(data: any): Observable<any> {
+    return this.http.post(`${this.apiUrl}/signup/doctor`, data);
+  }
+
   logout(): void {
     localStorage.removeItem(this.STORAGE_KEY);
     this.router.navigate(['/login']);

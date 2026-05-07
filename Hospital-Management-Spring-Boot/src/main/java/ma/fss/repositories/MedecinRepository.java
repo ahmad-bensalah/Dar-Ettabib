@@ -15,4 +15,5 @@ public interface MedecinRepository extends JpaRepository<Medecin, Long> {
 
     Page<Medecin> findByNomContains(String nom, Pageable pageable);
 
+    Medecin findByUsername(String username);
 }

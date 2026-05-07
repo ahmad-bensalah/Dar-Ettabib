@@ -15,9 +15,34 @@ export class ApiService {
   constructor(private http: HttpClient) { }
 
   // --- Patients ---
+  getPatientByUsername(username: string): Observable<Patient> {
+    return this.http.get<Patient>(`${this.apiUrl}/patients/by-username/${username}`);
+  }
+
+  getMedecinByUsername(username: string): Observable<Medecin> {
+    return this.http.get<Medecin>(`${this.apiUrl}/medecins/by-username/${username}`);
+  }
+
+  getAllMedecins(): Observable<Medecin[]> {
+    return this.http.get<Medecin[]>(`${this.apiUrl}/medecins/all`);
+  }
+
+  getRendezVousByPatient(username: string): Observable<RendezVous[]> {
+    return this.http.get<RendezVous[]>(`${this.apiUrl}/rendezvous/patient/${username}`);
+  }
+
+  getRendezVousByDoctor(username: string): Observable<RendezVous[]> {
+    return this.http.get<RendezVous[]>(`${this.apiUrl}/rendezvous/doctor/${username}`);
+  }
+
   getPatients(page: number = 0, size: number = 5, keyword: string = ''): Observable<PageResponse<Patient>> {
     const params = new HttpParams().set('page', page).set('size', size).set('keyword', keyword);
     return this.http.get<PageResponse<Patient>>(`${this.apiUrl}/patients`, { params });
+  }
+
+  getPatientsByDoctor(username: string, page: number = 0, size: number = 5, keyword: string = ''): Observable<PageResponse<Patient>> {
+    const params = new HttpParams().set('page', page).set('size', size).set('keyword', keyword);
+    return this.http.get<PageResponse<Patient>>(`${this.apiUrl}/patients/doctor/${username}`, { params });
   }
 
   getPatient(id: number): Observable<Patient> {

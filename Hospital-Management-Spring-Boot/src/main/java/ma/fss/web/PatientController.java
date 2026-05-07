@@ -7,6 +7,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import java.util.List;
 
 import javax.validation.Valid;
 
@@ -16,12 +17,27 @@ import javax.validation.Valid;
 public class PatientController {
     private PatientRepository patientRepository;
 
+    @GetMapping("/by-username/{username}")
+    public ResponseEntity<Patient> getPatientByUsername(@PathVariable String username) {
+        Patient p = patientRepository.findByUsername(username);
+        return p != null ? ResponseEntity.ok(p) : ResponseEntity.notFound().build();
+    }
+
     @GetMapping
     public Page<Patient> getPatients(
             @RequestParam(name = "page", defaultValue = "0") int page,
             @RequestParam(name = "size", defaultValue = "5") int size,
             @RequestParam(name = "keyword", defaultValue = "") String keyword) {
         return patientRepository.findByNomContains(keyword, PageRequest.of(page, size));
+    }
+
+    @GetMapping("/doctor/{username}")
+    public Page<Patient> getPatientsByDoctor(
+            @PathVariable String username,
+            @RequestParam(name = "page", defaultValue = "0") int page,
+            @RequestParam(name = "size", defaultValue = "5") int size,
+            @RequestParam(name = "keyword", defaultValue = "") String keyword) {
+        return patientRepository.findPatientsByDoctorUsernameAndNomContains(username, keyword, PageRequest.of(page, size));
     }
 
     @GetMapping("/{id}")

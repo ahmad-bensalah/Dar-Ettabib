@@ -11,6 +11,7 @@ import java.util.Collection;
 @Entity
 @Data @AllArgsConstructor @NoArgsConstructor
 public class Medecin {
+    private String username;
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
     private String nom;

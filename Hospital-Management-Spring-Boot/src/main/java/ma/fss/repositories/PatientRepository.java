@@ -10,12 +10,16 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
-@Transactional
-//patientDAO
-//heriter d'une interface generique
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
+@Transactional
 public interface PatientRepository extends JpaRepository<Patient,Long> {
 
     Page<Patient> findByNomContains(String nom, Pageable pageable);
 
+    Patient findByUsername(String username);
+
+    @Query("SELECT DISTINCT r.patient FROM RendezVous r WHERE r.medecin.username = :username AND r.patient.nom LIKE %:nom%")
+    Page<Patient> findPatientsByDoctorUsernameAndNomContains(@Param("username") String username, @Param("nom") String nom, Pageable pageable);
 }

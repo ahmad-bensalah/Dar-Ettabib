@@ -17,6 +17,9 @@ public class RendezVous {
     @Temporal(TemporalType.DATE)
     @DateTimeFormat(pattern = "yyyy-MM-dd")
     private Date date;
+    
+    private String time; // Format "HH:mm"
+
     @Enumerated(EnumType.STRING)
     private  StatusRDV statusRDV;
     @ManyToOne

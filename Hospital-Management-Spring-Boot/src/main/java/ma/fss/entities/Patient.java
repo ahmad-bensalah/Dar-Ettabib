@@ -20,11 +20,12 @@ import java.util.Date;
 @NoArgsConstructor
 
 public class Patient {
+    private String username;
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
     @NotEmpty
-    @Size(min = 3,max = 10)
+    @Size(min = 3,max = 50)
     private String nom;
     @Temporal(TemporalType.DATE)
     @DateTimeFormat(pattern = "yyyy-MM-dd")

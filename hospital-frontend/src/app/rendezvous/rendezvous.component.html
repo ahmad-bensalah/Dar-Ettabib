@@ -1,37 +1,39 @@
 <div class="container-fluid">
   <div class="d-flex justify-content-between align-items-center mb-4">
     <h2><i class="bi bi-calendar-check text-warning"></i> Rendez-vous</h2>
-    <button class="btn btn-primary" (click)="openModal()">
+    <button class="btn btn-primary" (click)="openModal()" *ngIf="role !== 'DOCTOR'">
       <i class="bi bi-plus-circle"></i> Nouveau RDV
     </button>
   </div>
 
   <div class="card shadow-sm">
     <div class="card-body">
-      <div class="table-responsive" *ngIf="rdvPage && rdvPage.content.length > 0; else noData">
+      <div class="table-responsive" *ngIf="displayedRDVs.length > 0; else noData">
         <table class="table table-hover align-middle">
           <thead class="table-light">
             <tr>
               <th>ID</th>
               <th>Date</th>
+              <th>Heure</th>
               <th>Statut</th>
-              <th>Patient</th>
-              <th>Médecin</th>
+              <th *ngIf="role !== 'PATIENT'">Patient</th>
+              <th *ngIf="role !== 'DOCTOR'">Médecin</th>
               <th class="text-end">Actions</th>
             </tr>
           </thead>
           <tbody>
-            <tr *ngFor="let r of rdvPage.content">
+            <tr *ngFor="let r of displayedRDVs">
               <td>#{{r.id}}</td>
               <td><strong>{{r.date | date:'dd/MM/yyyy'}}</strong></td>
+              <td>{{r.time || 'N/A'}}</td>
               <td><span class="badge" [ngClass]="getStatusClass(r.statusRDV)">{{r.statusRDV}}</span></td>
-              <td>{{r.patient?.nom || 'N/A'}}</td>
-              <td>{{r.medecin?.nom || 'N/A'}}</td>
+              <td *ngIf="role !== 'PATIENT'">{{r.patient?.nom || 'N/A'}}</td>
+              <td *ngIf="role !== 'DOCTOR'">{{r.medecin?.nom || 'N/A'}}</td>
               <td class="text-end">
                 <button class="btn btn-sm btn-outline-info me-2" title="Edit" (click)="openModal(r)">
                   <i class="bi bi-pencil-square"></i>
                 </button>
-                <button class="btn btn-sm btn-outline-danger" title="Delete" (click)="deleteRDV(r.id!)">
+                <button class="btn btn-sm btn-outline-danger" title="Delete" (click)="deleteRDV(r.id!)" *ngIf="role === 'ADMIN'">
                   <i class="bi bi-trash"></i>
                 </button>
               </td>
@@ -39,7 +41,7 @@
           </tbody>
         </table>
 
-        <nav class="d-flex justify-content-between align-items-center mt-3">
+        <nav class="d-flex justify-content-between align-items-center mt-3" *ngIf="role === 'ADMIN' && rdvPage">
           <span class="text-muted small">Total: {{rdvPage.totalElements}} rendez-vous</span>
           <ul class="pagination pagination-sm mb-0">
             <li class="page-item" [class.disabled]="currentPage === 0">
@@ -77,11 +79,17 @@
       </div>
       <div class="modal-body p-4">
         <form [formGroup]="rdvForm" (ngSubmit)="saveRDV()">
-          <div class="mb-3">
-            <label class="form-label">Date du Rendez-vous <span class="text-danger">*</span></label>
-            <input type="date" class="form-control" formControlName="date">
+          <div class="row mb-3">
+            <div class="col-md-6">
+              <label class="form-label">Date du Rendez-vous <span class="text-danger">*</span></label>
+              <input type="date" class="form-control" formControlName="date" [min]="todayString">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Heure (HH:mm) <span class="text-danger">*</span></label>
+              <input type="time" class="form-control" formControlName="time">
+            </div>
           </div>
-          <div class="mb-4">
+          <div class="mb-4" *ngIf="role !== 'PATIENT'">
             <label class="form-label">Statut <span class="text-danger">*</span></label>
             <select class="form-select" formControlName="statusRDV">
               <option value="PENDING">En attente</option>
@@ -89,14 +97,15 @@
               <option value="CANCELED">Annulé</option>
             </select>
           </div>
-          <div class="mb-4">
+          <div class="mb-4" *ngIf="role !== 'PATIENT'">
             <label class="form-label">Patient <span class="text-danger">*</span></label>
             <select class="form-select" formControlName="patientId">
               <option value="">Sélectionnez un patient</option>
+              <option *ngIf="role === 'DOCTOR' && editingId && rdvForm.value.patientId" [value]="rdvForm.value.patientId">Patient Assigné</option>
               <option *ngFor="let p of patients" [value]="p.id">{{p.nom}}</option>
             </select>
           </div>
-          <div class="mb-4">
+          <div class="mb-4" *ngIf="role !== 'DOCTOR'">
             <label class="form-label">Médecin <span class="text-danger">*</span></label>
             <select class="form-select" formControlName="medecinId">
               <option value="">Sélectionnez un médecin</option>

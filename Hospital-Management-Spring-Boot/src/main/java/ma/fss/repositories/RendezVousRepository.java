@@ -12,5 +12,7 @@ import java.util.Date;
 @Transactional
 public interface RendezVousRepository extends JpaRepository<RendezVous, Long> {
     Page<RendezVous> findByDate(Date date, Pageable pageable);
+    java.util.List<RendezVous> findByPatientUsername(String username);
+    java.util.List<RendezVous> findByMedecinUsername(String username);
+    java.util.List<RendezVous> findByMedecinId(Long medecinId);
 }
-

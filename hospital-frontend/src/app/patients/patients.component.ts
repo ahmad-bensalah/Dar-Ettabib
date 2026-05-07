@@ -2,6 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { ApiService } from '../services/api.service';
+import { AuthService } from '../services/auth.service';
 import { Patient, PageResponse } from '../models/patient.model';
 
 @Component({
@@ -21,8 +22,16 @@ export class PatientsComponent implements OnInit {
   showModal = false;
   editingId?: number;
 
-  constructor(private apiService: ApiService, private fb: FormBuilder) {
+  constructor(private apiService: ApiService, public authService: AuthService, private fb: FormBuilder) {
     this.initForm();
+  }
+
+  get role(): string {
+    return this.authService.getRole();
+  }
+
+  get username(): string {
+    return this.authService.getUsername();
   }
 
   ngOnInit(): void {
@@ -31,7 +40,7 @@ export class PatientsComponent implements OnInit {
 
   initForm(): void {
     this.patientForm = this.fb.group({
-      nom: ['', [Validators.required, Validators.minLength(3), Validators.maxLength(10)]],
+      nom: ['', [Validators.required, Validators.minLength(3), Validators.maxLength(50)]],
       dateNaissance: ['', Validators.required],
       malade: [false],
       adresse: [''],
@@ -42,10 +51,17 @@ export class PatientsComponent implements OnInit {
   }
 
   loadPatients(): void {
-    this.apiService.getPatients(this.currentPage, this.pageSize, this.keyword).subscribe({
-      next: (data) => this.patientsPage = data,
-      error: (err) => console.error(err)
-    });
+    if (this.role === 'DOCTOR') {
+      this.apiService.getPatientsByDoctor(this.username, this.currentPage, this.pageSize, this.keyword).subscribe({
+        next: (data) => this.patientsPage = data,
+        error: (err) => console.error(err)
+      });
+    } else {
+      this.apiService.getPatients(this.currentPage, this.pageSize, this.keyword).subscribe({
+        next: (data) => this.patientsPage = data,
+        error: (err) => console.error(err)
+      });
+    }
   }
 
   onSearch(): void {

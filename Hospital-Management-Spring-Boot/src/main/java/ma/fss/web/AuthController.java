@@ -1,8 +1,13 @@
 package ma.fss.web;
 
 import lombok.AllArgsConstructor;
+import ma.fss.entities.Medecin;
+import ma.fss.entities.Patient;
+import ma.fss.repositories.MedecinRepository;
+import ma.fss.repositories.PatientRepository;
 import ma.fss.security.entities.AppUser;
 import ma.fss.security.service.SecurityService;
+import ma.fss.web.dto.SignupDto;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -21,6 +26,8 @@ public class AuthController {
 
     private SecurityService securityService;
     private PasswordEncoder passwordEncoder;
+    private PatientRepository patientRepository;
+    private MedecinRepository medecinRepository;
 
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody Map<String, String> credentials) {
@@ -52,5 +59,61 @@ public class AuthController {
         response.put("roles", roles);
 
         return ResponseEntity.ok(response);
+    }
+
+    @PostMapping("/signup/patient")
+    public ResponseEntity<?> signupPatient(@RequestBody SignupDto dto) {
+        try {
+            if (securityService.loadUserByUsername(dto.getUsername()) != null) {
+                return ResponseEntity.badRequest().body(Collections.singletonMap("error", "Username already exists"));
+            }
+
+            // Create user
+            securityService.saveNewUser(dto.getUsername(), dto.getPassword(), dto.getPassword());
+            securityService.addRoleToUser(dto.getUsername(), "PATIENT");
+
+            // Create patient
+            Patient patient = new Patient();
+            patient.setUsername(dto.getUsername());
+            patient.setNom(dto.getNom());
+            patient.setDateNaissance(dto.getDateNaissance());
+            patient.setMalade(dto.isMalade());
+            patient.setAdresse(dto.getAdresse());
+            patient.setCodePostal(dto.getCodePostal());
+            patient.setNumeroTelephone(dto.getNumeroTelephone());
+            patient.setTitre(dto.getTitre());
+            patientRepository.save(patient);
+
+            return ResponseEntity.ok(Collections.singletonMap("message", "Patient registered successfully"));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Collections.singletonMap("error", "Registration failed: " + e.getMessage()));
+        }
+    }
+
+    @PostMapping("/signup/doctor")
+    public ResponseEntity<?> signupDoctor(@RequestBody SignupDto dto) {
+        try {
+            if (securityService.loadUserByUsername(dto.getUsername()) != null) {
+                return ResponseEntity.badRequest().body(Collections.singletonMap("error", "Username already exists"));
+            }
+
+            // Create user
+            securityService.saveNewUser(dto.getUsername(), dto.getPassword(), dto.getPassword());
+            securityService.addRoleToUser(dto.getUsername(), "DOCTOR");
+
+            // Create doctor
+            Medecin medecin = new Medecin();
+            medecin.setUsername(dto.getUsername());
+            medecin.setNom(dto.getNom());
+            medecin.setEmail(dto.getEmail());
+            medecin.setSpecialite(dto.getSpecialite());
+            medecinRepository.save(medecin);
+
+            return ResponseEntity.ok(Collections.singletonMap("message", "Doctor registered successfully"));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Collections.singletonMap("error", "Registration failed: " + e.getMessage()));
+        }
     }
 }

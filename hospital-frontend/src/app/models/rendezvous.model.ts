@@ -6,6 +6,7 @@ export type StatusRDV = 'PENDING' | 'CANCELED' | 'DONE';
 export interface RendezVous {
     id?: number;
     date: Date | string;
+    time?: string;
     statusRDV: StatusRDV;
     patient?: Patient;
     medecin?: Medecin;

@@ -2,6 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { ApiService } from '../services/api.service';
+import { AuthService } from '../services/auth.service';
 import { RendezVous, StatusRDV } from '../models/rendezvous.model';
 import { PageResponse, Patient } from '../models/patient.model';
 import { Medecin } from '../models/medecin.model';
@@ -14,37 +15,84 @@ import { Medecin } from '../models/medecin.model';
   styleUrls: ['./rendezvous.component.css']
 })
 export class RendezvousComponent implements OnInit {
+  rdvs: RendezVous[] = [];
   rdvPage: PageResponse<RendezVous> | null = null;
   currentPage = 0;
   pageSize = 5;
 
   patients: Patient[] = [];
   medecins: Medecin[] = [];
+  
+  myPatientProfile?: Patient;
+  myDoctorProfile?: Medecin;
 
   rdvForm!: FormGroup;
   showModal = false;
   editingId?: number;
 
-  constructor(private apiService: ApiService, private fb: FormBuilder) {
+  constructor(
+    private apiService: ApiService, 
+    public authService: AuthService,
+    private fb: FormBuilder
+  ) {
     this.rdvForm = this.fb.group({
       date: ['', Validators.required],
+      time: ['', Validators.required],
       statusRDV: ['PENDING', Validators.required],
       patientId: ['', Validators.required],
       medecinId: ['', Validators.required]
     });
   }
 
+  get todayString(): string {
+    return new Date().toISOString().split('T')[0];
+  }
+
+  get role(): string {
+    return this.authService.getRole();
+  }
+
+  get username(): string {
+    return this.authService.getUsername();
+  }
+
   ngOnInit(): void {
-    this.loadRDVs();
-    this.apiService.getPatients(0, 100).subscribe(data => this.patients = data.content);
-    this.apiService.getMedecins(0, 100).subscribe(data => this.medecins = data.content);
+    if (this.role === 'PATIENT') {
+      this.apiService.getPatientByUsername(this.username).subscribe({
+        next: (p) => { this.myPatientProfile = p; this.loadRDVs(); },
+        error: () => this.loadRDVs()
+      });
+      // Patient needs a list of all doctors to book
+      this.apiService.getAllMedecins().subscribe(docs => this.medecins = docs);
+    } else if (this.role === 'DOCTOR') {
+      this.apiService.getMedecinByUsername(this.username).subscribe({
+        next: (m) => { this.myDoctorProfile = m; this.loadRDVs(); },
+        error: () => this.loadRDVs()
+      });
+      // Doctor might need patients list, though usually just manages their rdvs
+      this.apiService.getPatients(0, 100).subscribe(data => this.patients = data.content);
+    } else {
+      this.apiService.getPatients(0, 100).subscribe(data => this.patients = data.content);
+      this.apiService.getMedecins(0, 100).subscribe(data => this.medecins = data.content);
+      this.loadRDVs();
+    }
   }
 
   loadRDVs(): void {
-    this.apiService.getRendezVous(this.currentPage, this.pageSize).subscribe({
-      next: (data) => this.rdvPage = data,
-      error: (err) => console.error(err)
-    });
+    if (this.role === 'PATIENT') {
+      this.apiService.getRendezVousByPatient(this.username).subscribe(data => {
+        this.rdvs = data; // Using simple array for patient
+      });
+    } else if (this.role === 'DOCTOR') {
+      this.apiService.getRendezVousByDoctor(this.username).subscribe(data => {
+        this.rdvs = data; // Using simple array for doctor
+      });
+    } else {
+      this.apiService.getRendezVous(this.currentPage, this.pageSize).subscribe({
+        next: (data) => this.rdvPage = data,
+        error: (err) => console.error(err)
+      });
+    }
   }
 
   changePage(page: number): void {
@@ -54,19 +102,35 @@ export class RendezvousComponent implements OnInit {
 
   openModal(r?: RendezVous): void {
     this.showModal = true;
+    this.rdvForm.reset();
     if (r) {
       this.editingId = r.id;
       const d = new Date(r.date);
       const strDate = d.toISOString().split('T')[0];
+      
       this.rdvForm.patchValue({
         date: strDate,
+        time: r.time || '',
         statusRDV: r.statusRDV,
         patientId: r.patient?.id || '',
         medecinId: r.medecin?.id || ''
       });
     } else {
       this.editingId = undefined;
-      this.rdvForm.reset({ statusRDV: 'PENDING', patientId: '', medecinId: '' });
+      // Pre-fill profile IDs based on role
+      const defaults: any = { time: '', statusRDV: 'PENDING', patientId: '', medecinId: '' };
+      if (this.role === 'PATIENT' && this.myPatientProfile) {
+        defaults.patientId = this.myPatientProfile.id;
+      }
+      if (this.role === 'DOCTOR' && this.myDoctorProfile) {
+        defaults.medecinId = this.myDoctorProfile.id;
+      }
+      this.rdvForm.patchValue(defaults); // keep patchValue to avoid wiping unaffected fields
+      
+      // If patient, always strictly pending initially.
+      if (this.role === 'PATIENT') {
+         this.rdvForm.get('statusRDV')?.setValue('PENDING');
+      }
     }
   }
 
@@ -80,6 +144,7 @@ export class RendezvousComponent implements OnInit {
     const val = this.rdvForm.value;
     const data: RendezVous = {
       date: val.date,
+      time: val.time,
       statusRDV: val.statusRDV,
       patient: val.patientId ? { id: val.patientId } as Patient : undefined,
       medecin: val.medecinId ? { id: val.medecinId } as Medecin : undefined,
@@ -114,5 +179,13 @@ export class RendezvousComponent implements OnInit {
       case 'CANCELED': return 'bg-danger';
       default: return 'bg-secondary';
     }
+  }
+
+  // Helper for rendering array or PageResponse list
+  get displayedRDVs(): RendezVous[] {
+    if (this.role === 'ADMIN' && this.rdvPage) {
+      return this.rdvPage.content;
+    }
+    return this.rdvs;
   }
 }

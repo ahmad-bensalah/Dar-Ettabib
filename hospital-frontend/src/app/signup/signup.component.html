@@ -1,0 +1,85 @@
+<div class="container mt-5">
+  <div class="row justify-content-center">
+    <div class="col-md-6 col-lg-5">
+      <div class="card shadow-sm">
+        <div class="card-body p-4">
+          <h2 class="text-center mb-4">Create an Account</h2>
+          
+          <div *ngIf="errorMessage" class="alert alert-danger">{{ errorMessage }}</div>
+          <div *ngIf="successMessage" class="alert alert-success">{{ successMessage }}</div>
+
+          <div class="mb-4 text-center">
+            <div class="btn-group" role="group">
+              <input type="radio" class="btn-check" name="userType" id="typePatient" autocomplete="off" [(ngModel)]="userType" value="PATIENT">
+              <label class="btn btn-outline-primary" for="typePatient">Patient</label>
+            
+              <input type="radio" class="btn-check" name="userType" id="typeDoctor" autocomplete="off" [(ngModel)]="userType" value="DOCTOR">
+              <label class="btn btn-outline-primary" for="typeDoctor">Doctor</label>
+            </div>
+          </div>
+
+          <form (ngSubmit)="onSignup()">
+            <div class="mb-3">
+              <label class="form-label">Username *</label>
+              <input type="text" class="form-control" name="username" [(ngModel)]="username" required>
+            </div>
+            <div class="mb-3">
+              <label class="form-label">Password *</label>
+              <input type="password" class="form-control" name="password" [(ngModel)]="password" required>
+            </div>
+            <div class="mb-3">
+              <label class="form-label">Full Name *</label>
+              <input type="text" class="form-control" name="nom" [(ngModel)]="nom" required>
+            </div>
+
+            <!-- Doctor Fields -->
+            <ng-container *ngIf="userType === 'DOCTOR'">
+              <div class="mb-3">
+                <label class="form-label">Email</label>
+                <input type="email" class="form-control" name="email" [(ngModel)]="email">
+              </div>
+              <div class="mb-3">
+                <label class="form-label">Specialty</label>
+                <input type="text" class="form-control" name="specialite" [(ngModel)]="specialite">
+              </div>
+            </ng-container>
+
+            <!-- Patient Fields -->
+            <ng-container *ngIf="userType === 'PATIENT'">
+              <div class="mb-3">
+                <label class="form-label">Date of Birth</label>
+                <input type="date" class="form-control" name="dateNaissance" [(ngModel)]="dateNaissance">
+              </div>
+              <div class="mb-3">
+                <label class="form-label">Address</label>
+                <input type="text" class="form-control" name="adresse" [(ngModel)]="adresse">
+              </div>
+              <div class="row">
+                <div class="col-md-6 mb-3">
+                  <label class="form-label">Phone Number (CIN)</label>
+                  <input type="text" class="form-control" name="numeroTelephone" [(ngModel)]="numeroTelephone">
+                </div>
+                <div class="col-md-6 mb-3">
+                  <label class="form-label">Postal Code</label>
+                  <input type="text" class="form-control" name="codePostal" [(ngModel)]="codePostal">
+                </div>
+              </div>
+              <div class="mb-3 form-check">
+                <input type="checkbox" class="form-check-input" id="malade" name="malade" [(ngModel)]="malade">
+                <label class="form-check-label" for="malade">Currently Sick?</label>
+              </div>
+            </ng-container>
+
+            <button type="submit" class="btn btn-primary w-100 mb-3" [disabled]="isLoading">
+              <span *ngIf="isLoading" class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+              Sign Up
+            </button>
+            <div class="text-center">
+              <a routerLink="/login" class="text-decoration-none">Already have an account? Log in</a>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
