@@ -1,4 +1,4 @@
-<![CDATA[<div align="center">
+<div align="center">
 
 # 🏥 Dar Ettabib
 
@@ -433,4 +433,3 @@ Full appointment lifecycle with doctor/patient selection, time picker, status tr
 *Dar Ettabib — Making hospital management simple and efficient.*
 
 </div>
-]]>
