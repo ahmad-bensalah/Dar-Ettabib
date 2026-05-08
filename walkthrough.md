@@ -2,7 +2,7 @@
 
 ## What Was Created
 
-A comprehensive **3-layer test suite** with **7 test classes** and **~40 test cases** covering the entire Spring Boot backend.
+A comprehensive **3-layer test suite** with **8 test classes** and **47 test cases** covering the entire Spring Boot backend.
 
 ---
 
@@ -14,14 +14,14 @@ graph TD
     A --> C["⚙️ Service Layer"]
     A --> D["🌐 Controller Layer"]
 
-    B --> B1["PatientRepositoryTest<br/>6 tests"]
+    B --> B1["PatientRepositoryTest<br/>7 tests"]
     B --> B2["MedecinRepositoryTest<br/>5 tests"]
 
     C --> C1["IHospitalServiceImplTest<br/>7 tests"]
-    C --> C2["SecurityServiceImplTest<br/>9 tests"]
+    C --> C2["SecurityServiceImplTest<br/>10 tests"]
 
-    D --> D1["PatientControllerTest<br/>6 tests"]
-    D --> D2["AuthControllerTest<br/>5 tests"]
+    D --> D1["PatientControllerTest<br/>7 tests"]
+    D --> D2["AuthControllerTest<br/>6 tests"]
     D --> D3["RDVControllerTest<br/>3 tests"]
 ```
 
@@ -92,16 +92,16 @@ void shouldThrowExceptionWhenNoPatientExists() {
 
 ---
 
-### 3️⃣ Controller Layer — `@WebMvcTest`
+### 3️⃣ Controller Layer — Standalone `MockMvc` + Mockito
 
 **Files:** [PatientControllerTest.java](file:///home/abid/Documents/Dar-Ettabib/Hospital-Management-Spring-Boot/src/test/java/ma/fss/web/PatientControllerTest.java), [AuthControllerTest.java](file:///home/abid/Documents/Dar-Ettabib/Hospital-Management-Spring-Boot/src/test/java/ma/fss/web/AuthControllerTest.java), [RDVControllerTest.java](file:///home/abid/Documents/Dar-Ettabib/Hospital-Management-Spring-Boot/src/test/java/ma/fss/web/RDVControllerTest.java)
 
 **What to say:**
-> "Controller tests use `@WebMvcTest` which loads only the web layer — the controller and security configuration. We use `MockMvc` to simulate HTTP requests and verify response status codes, JSON body content, and headers. No server actually starts."
+> "Controller tests use **standalone MockMvc** with **Mockito** to test each controller in complete isolation. We mock the repository/service dependencies with `@Mock`, instantiate the controller with `@InjectMocks`, and use `MockMvcBuilders.standaloneSetup()` to simulate HTTP requests. No Spring context is loaded at all — making these tests extremely fast."
 
 **Key points to highlight:**
 - **`MockMvc`** — simulates HTTP requests (GET, POST, PUT, DELETE)
-- **`@MockBean`** — mocks the repositories/services that controllers depend on
+- **`@Mock` + `@InjectMocks`** — mocks the repositories/services and injects them into the controller
 - Tests verify: **HTTP status codes** (200, 201, 404, 401), **JSON response** structure
 - Uses `jsonPath()` for **precise JSON assertions**
 
@@ -162,7 +162,7 @@ cd Hospital-Management-Spring-Boot
 |---|---|---|
 | **Integration test** | `@DataJpaTest` | Tests JPA repos with real H2 database |
 | **Unit test** | `@ExtendWith(MockitoExtension.class)` | Tests logic with mocked dependencies |
-| **Web test** | `@WebMvcTest` | Tests HTTP endpoints with MockMvc |
+| **Web test** | `MockMvcBuilders.standaloneSetup()` | Tests HTTP endpoints with MockMvc |
 
 ### Step 4: Highlight the business-critical test
 > "Our most important test verifies the **scheduling conflict detection** — a doctor can't have two appointments within 15 minutes. This prevents double-booking."
@@ -174,36 +174,33 @@ cd Hospital-Management-Spring-Boot
 
 ## Summary
 
-Test Class	                Tests	Status
-PatientApplicationTests 	1	    ✅
-PatientRepositoryTest	    7	    ✅
-MedecinRepositoryTest	    5	    ✅
-IHospitalServiceImplTest	7	    ✅
-SecurityServiceImplTest	    10	    ✅
-PatientControllerTest	    7	    ✅
-AuthControllerTest	        6	    ✅
-RDVControllerTest	        3	    ✅
-Total	                    47	    ✅ ALL PASS
+| Test Class | Tests | Status |
+|---|:---:|---|
+| `PatientApplicationTests` | 1 | ✅ |
+| `PatientRepositoryTest` | 7 | ✅ |
+| `MedecinRepositoryTest` | 5 | ✅ |
+| `IHospitalServiceImplTest` | 7 | ✅ |
+| `SecurityServiceImplTest` | 10 | ✅ |
+| `PatientControllerTest` | 7 | ✅ |
+| `AuthControllerTest` | 6 | ✅ |
+| `RDVControllerTest` | 3 | ✅ |
+| **Total** | **47** | **✅ ALL PASS** |
 
-docker run --rm -v "$(pwd)/Hospital-Management-Spring-Boot:/workspace/backend" -v maven_cache:/root/.m2 -w /workspace/backend maven:3.8.7-eclipse-temurin-8 mvn test 2>&1 | tail -40
+### How to Run (Docker — no local Java needed)
 
-docker run --rm -v "$(pwd)/Hospital-Management-Spring-Boot:/workspace/backend" \
-  -v maven_cache:/root/.m2 -w /workspace/backend \
+```bash
+docker run --rm \
+  -v "$(pwd)/Hospital-Management-Spring-Boot:/workspace/backend" \
+  -v maven_cache:/root/.m2 \
+  -w /workspace/backend \
   maven:3.8.7-eclipse-temurin-8 mvn test
+```
 
-tory shut-down'
-Hibernate: drop table if exists consultation CASCADE 
-Hibernate: drop table if exists medecin CASCADE 
-Hibernate: drop table if exists patient CASCADE 
-Hibernate: drop table if exists rendez_vous CASCADE 
-[INFO] 
-[INFO] Results:
-[INFO] 
+### Expected Output
+
+```
 [INFO] Tests run: 47, Failures: 0, Errors: 0, Skipped: 0
-[INFO] 
 [INFO] ------------------------------------------------------------------------
 [INFO] BUILD SUCCESS
 [INFO] ------------------------------------------------------------------------
-[INFO] Total time:  7.274 s
-[INFO] Finished at: 2026-05-08T00:33:53Z
-[INFO] ------------------------------------------------------------------------
+```
